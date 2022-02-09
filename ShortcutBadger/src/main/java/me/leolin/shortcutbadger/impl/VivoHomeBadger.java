@@ -27,7 +27,12 @@ public class VivoHomeBadger implements Badger {
         if (Build.VERSION.SDK_INT == 26) {
             intent.addFlags(0x01000000);
         }
-        context.sendBroadcast(intent);
+        try {
+            context.sendBroadcast(intent);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
