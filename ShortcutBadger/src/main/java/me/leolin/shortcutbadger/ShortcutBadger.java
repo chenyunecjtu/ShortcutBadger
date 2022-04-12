@@ -270,7 +270,12 @@ public final class ShortcutBadger {
                 indexToSwapWith = i;
             }
         }
-        Collections.swap(resolveInfos, 0, indexToSwapWith);
+        try {
+            Collections.swap(resolveInfos, 0, indexToSwapWith);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     // Avoid anybody to instantiate this class
