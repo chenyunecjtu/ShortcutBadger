@@ -3,6 +3,7 @@ package me.leolin.shortcutbadger;
 import android.app.Notification;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
@@ -188,6 +189,16 @@ public final class ShortcutBadger {
     // Initialize Badger if a launcher is availalble (eg. set as default on the device)
     // Returns true if a launcher is available, in this case, the Badger will be set and sShortcutBadger will be non null.
     private static boolean initBadger(Context context) {
+        if (sComponentName == null) {
+            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (launchIntent == null) {
+                Log.e(LOG_TAG, "Unable to find launch intent for package " + context.getPackageName());
+                return false;
+            }
+
+            sComponentName = launchIntent.getComponent();
+        }
+
         if (sShortcutBadger == null) {
             if (OAIDRom.isHuawei()) {
                 sShortcutBadger = new HuaweiHomeBadger();
