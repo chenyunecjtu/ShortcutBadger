@@ -3,15 +3,11 @@ package me.leolin.shortcutbadger;
 import android.app.Notification;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,9 +23,11 @@ import me.leolin.shortcutbadger.impl.OPPOHomeBader;
 import me.leolin.shortcutbadger.impl.SamsungHomeBadger;
 import me.leolin.shortcutbadger.impl.SonyHomeBadger;
 import me.leolin.shortcutbadger.impl.VivoHomeBadger;
+import me.leolin.shortcutbadger.impl.XiaomiHomeBadger;
 import me.leolin.shortcutbadger.impl.YandexLauncherBadger;
 import me.leolin.shortcutbadger.impl.ZTEHomeBadger;
 import me.leolin.shortcutbadger.impl.ZukHomeBadger;
+import me.leolin.shortcutbadger.util.OAIDRom;
 
 
 /**
@@ -93,16 +91,14 @@ public final class ShortcutBadger {
      */
     public static void applyCountOrThrow(Context context, int badgeCount) throws ShortcutBadgeException {
         if (sShortcutBadger == null) {
-            boolean launcherReady = initBadger(context);
-
-            if (!launcherReady)
-                throw new ShortcutBadgeException("No default launcher available");
+            initBadger(context);
         }
 
         try {
             sShortcutBadger.executeBadge(context, sComponentName, badgeCount);
         } catch (Exception e) {
-            throw new ShortcutBadgeException("Unable to execute badge", e);
+            e.printStackTrace();
+//            throw new ShortcutBadgeException("Unable to execute badge", e);
         }
     }
 
@@ -192,90 +188,25 @@ public final class ShortcutBadger {
     // Initialize Badger if a launcher is availalble (eg. set as default on the device)
     // Returns true if a launcher is available, in this case, the Badger will be set and sShortcutBadger will be non null.
     private static boolean initBadger(Context context) {
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-        if (launchIntent == null) {
-            Log.e(LOG_TAG, "Unable to find launch intent for package " + context.getPackageName());
-            return false;
-        }
-
-        sComponentName = launchIntent.getComponent();
-
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_HOME);
-        List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
-
-        //Turns out framework does not guarantee to put DEFAULT Activity on top of the list.
-        ResolveInfo resolveInfoDefault = context.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
-        validateInfoList(resolveInfoDefault, resolveInfos);
-
-        for (ResolveInfo resolveInfo : resolveInfos) {
-            String currentHomePackage = resolveInfo.activityInfo.packageName;
-
-            for (Class<? extends Badger> badger : BADGERS) {
-                Badger shortcutBadger = null;
-                try {
-                    shortcutBadger = badger.newInstance();
-                } catch (Exception ignored) {
-                }
-                if (shortcutBadger != null && shortcutBadger.getSupportLaunchers().contains(currentHomePackage)) {
-                    if (isLauncherVersionSupported(context, currentHomePackage)) {
-                        sShortcutBadger = shortcutBadger;
-                    }
-                    break;
-                }
-            }
-            if (sShortcutBadger != null) {
-                break;
-            }
-        }
-
         if (sShortcutBadger == null) {
-            if (Build.MANUFACTURER.equalsIgnoreCase("ZUK"))
-                sShortcutBadger = new ZukHomeBadger();
-            else if (Build.MANUFACTURER.equalsIgnoreCase("OPPO"))
-                sShortcutBadger = new OPPOHomeBader();
-            else if (Build.MANUFACTURER.equalsIgnoreCase("VIVO"))
+            if (OAIDRom.isHuawei()) {
+                sShortcutBadger = new HuaweiHomeBadger();
+            } else if (OAIDRom.isVivo()) {
                 sShortcutBadger = new VivoHomeBadger();
-            else if (Build.MANUFACTURER.equalsIgnoreCase("ZTE"))
+            } else if (OAIDRom.isOppo()) {
+                sShortcutBadger = new OPPOHomeBader();
+            } else if (OAIDRom.isXiaomi()) {
+                sShortcutBadger = new XiaomiHomeBadger();
+            } else if (OAIDRom.isZTE()) {
                 sShortcutBadger = new ZTEHomeBadger();
-            else
+            } else if (OAIDRom.isSamsung()) {
+                sShortcutBadger = new SamsungHomeBadger();
+            } else {
                 sShortcutBadger = new DefaultBadger();
+            }
         }
 
         return true;
-    }
-
-    /**
-     * Making sure that launcher version that yet doesn't support badges mechanism
-     * is <b>NOT</b> used by <b><i>sShortcutBadger</i></b>.
-     */
-    private static boolean isLauncherVersionSupported(Context context, String currentHomePackage) {
-        if (!YandexLauncherBadger.PACKAGE_NAME.equals(currentHomePackage)) {
-            return true;
-        }
-        return YandexLauncherBadger.isVersionSupported(context);
-    }
-
-    /**
-     * Making sure the default Home activity is on top of the returned list
-     * @param defaultActivity       default Home activity
-     * @param resolveInfos          list of all Home activities in the system
-     */
-    private static void validateInfoList(ResolveInfo defaultActivity, List<ResolveInfo> resolveInfos) {
-        int indexToSwapWith = 0;
-        for (int i = 0, resolveInfosSize = resolveInfos.size(); i < resolveInfosSize; i++) {
-            ResolveInfo resolveInfo = resolveInfos.get(i);
-            String currentActivityName = resolveInfo.activityInfo.packageName;
-            if (currentActivityName.equals(defaultActivity.activityInfo.packageName)) {
-                indexToSwapWith = i;
-            }
-        }
-        try {
-            Collections.swap(resolveInfos, 0, indexToSwapWith);
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     // Avoid anybody to instantiate this class
