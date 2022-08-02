@@ -22,11 +22,11 @@ public class ApexHomeBadger implements Badger {
     private static final String CLASS = "class";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         Intent intent = new Intent(INTENT_UPDATE_COUNTER);
-        intent.putExtra(PACKAGENAME, componentName.getPackageName());
+        intent.putExtra(PACKAGENAME, context.getPackageName());
         intent.putExtra(COUNT, badgeCount);
-        intent.putExtra(CLASS, componentName.getClassName());
+        intent.putExtra(CLASS, launcherClass.getName());
 
         BroadcastHelper.sendIntentExplicitly(context, intent);
     }

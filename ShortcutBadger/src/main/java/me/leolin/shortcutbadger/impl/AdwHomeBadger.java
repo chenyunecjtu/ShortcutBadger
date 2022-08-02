@@ -22,10 +22,10 @@ public class AdwHomeBadger implements Badger {
     public static final String COUNT = "COUNT";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         Intent intent = new Intent(INTENT_UPDATE_COUNTER);
-        intent.putExtra(PACKAGENAME, componentName.getPackageName());
-        intent.putExtra(CLASSNAME, componentName.getClassName());
+        intent.putExtra(PACKAGENAME, context.getPackageName());
+        intent.putExtra(CLASSNAME, launcherClass.getName());
         intent.putExtra(COUNT, badgeCount);
 
         BroadcastHelper.sendIntentExplicitly(context, intent);

@@ -33,7 +33,7 @@ public class OPPOHomeBader implements Badger {
     private int mCurrentTotalCount = -1;
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         if (mCurrentTotalCount == badgeCount) {
             return;
         }
@@ -41,7 +41,7 @@ public class OPPOHomeBader implements Badger {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
             executeBadgeByContentProvider(context, badgeCount);
         } else {
-            executeBadgeByBroadcast(context, componentName, badgeCount);
+            executeBadgeByBroadcast(context, launcherClass, badgeCount);
         }
     }
 
@@ -50,13 +50,13 @@ public class OPPOHomeBader implements Badger {
         return Collections.singletonList("com.oppo.launcher");
     }
 
-    private void executeBadgeByBroadcast(Context context, ComponentName componentName,
+    private void executeBadgeByBroadcast(Context context, Class launcherClass,
                                          int badgeCount) throws ShortcutBadgeException {
         if (badgeCount == 0) {
             badgeCount = -1;
         }
         Intent intent = new Intent(INTENT_ACTION);
-        intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
+        intent.putExtra(INTENT_EXTRA_PACKAGENAME, launcherClass.getName());
         intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
         intent.putExtra(INTENT_EXTRA_BADGE_UPGRADENUMBER, badgeCount);
 

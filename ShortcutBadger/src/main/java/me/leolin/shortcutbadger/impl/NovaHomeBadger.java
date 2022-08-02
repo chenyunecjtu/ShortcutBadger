@@ -25,9 +25,9 @@ public class NovaHomeBadger implements Badger {
     private static final String TAG = "tag";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(TAG, componentName.getPackageName() + "/" + componentName.getClassName());
+        contentValues.put(TAG, context.getPackageName() + "/" + launcherClass.getName());
         contentValues.put(COUNT, badgeCount);
         context.getContentResolver().insert(Uri.parse(CONTENT_URI), contentValues);
     }

@@ -1,32 +1,19 @@
 package me.leolin.shortcutbadger;
 
 import android.app.Notification;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
 
-import me.leolin.shortcutbadger.impl.AdwHomeBadger;
-import me.leolin.shortcutbadger.impl.ApexHomeBadger;
-import me.leolin.shortcutbadger.impl.AsusHomeBadger;
 import me.leolin.shortcutbadger.impl.DefaultBadger;
-import me.leolin.shortcutbadger.impl.EverythingMeHomeBadger;
 import me.leolin.shortcutbadger.impl.HuaweiHomeBadger;
-import me.leolin.shortcutbadger.impl.NewHtcHomeBadger;
-import me.leolin.shortcutbadger.impl.NovaHomeBadger;
 import me.leolin.shortcutbadger.impl.OPPOHomeBader;
 import me.leolin.shortcutbadger.impl.SamsungHomeBadger;
-import me.leolin.shortcutbadger.impl.SonyHomeBadger;
 import me.leolin.shortcutbadger.impl.VivoHomeBadger;
 import me.leolin.shortcutbadger.impl.XiaomiHomeBadger;
-import me.leolin.shortcutbadger.impl.YandexLauncherBadger;
-import me.leolin.shortcutbadger.impl.ZTEHomeBadger;
 import me.leolin.shortcutbadger.impl.ZukHomeBadger;
 import me.leolin.shortcutbadger.util.OAIDRom;
 
@@ -35,35 +22,9 @@ import me.leolin.shortcutbadger.util.OAIDRom;
  * @author Leo Lin
  */
 public final class ShortcutBadger {
-
     private static final String LOG_TAG = "ShortcutBadger";
-    private static final int SUPPORTED_CHECK_ATTEMPTS = 3;
-
-    private static final List<Class<? extends Badger>> BADGERS = new LinkedList<Class<? extends Badger>>();
-
-    private volatile static Boolean sIsBadgeCounterSupported;
-    private final static Object sCounterSupportedLock = new Object();
-
-    static {
-        BADGERS.add(AdwHomeBadger.class);
-        BADGERS.add(ApexHomeBadger.class);
-        BADGERS.add(DefaultBadger.class);
-        BADGERS.add(NewHtcHomeBadger.class);
-        BADGERS.add(NovaHomeBadger.class);
-        BADGERS.add(SonyHomeBadger.class);
-        BADGERS.add(AsusHomeBadger.class);
-        BADGERS.add(HuaweiHomeBadger.class);
-        BADGERS.add(OPPOHomeBader.class);
-        BADGERS.add(SamsungHomeBadger.class);
-        BADGERS.add(ZukHomeBadger.class);
-        BADGERS.add(VivoHomeBadger.class);
-        BADGERS.add(ZTEHomeBadger.class);
-        BADGERS.add(EverythingMeHomeBadger.class);
-        BADGERS.add(YandexLauncherBadger.class);
-    }
-
+    public   static Class launcherClass;
     private static Badger sShortcutBadger;
-    private static ComponentName sComponentName;
 
     /**
      * Tries to update the notification count
@@ -72,9 +33,9 @@ public final class ShortcutBadger {
      * @param badgeCount Desired badge count
      * @return true in case of success, false otherwise
      */
-    public static boolean applyCount(Context context, int badgeCount) {
+    public static boolean applyCount(Class launcherClass, Context context, int badgeCount) {
         try {
-            applyCountOrThrow(context, badgeCount);
+            applyCountOrThrow(launcherClass, context, badgeCount);
             return true;
         } catch (ShortcutBadgeException e) {
             if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
@@ -90,13 +51,13 @@ public final class ShortcutBadger {
      * @param context    Caller context
      * @param badgeCount Desired badge count
      */
-    public static void applyCountOrThrow(Context context, int badgeCount) throws ShortcutBadgeException {
+    public static void applyCountOrThrow(Class launcherClass, Context context, int badgeCount) throws ShortcutBadgeException {
         if (sShortcutBadger == null) {
             initBadger(context);
         }
 
         try {
-            sShortcutBadger.executeBadge(context, sComponentName, badgeCount);
+            sShortcutBadger.executeBadge(context, launcherClass, badgeCount);
         } catch (Exception e) {
             e.printStackTrace();
 //            throw new ShortcutBadgeException("Unable to execute badge", e);
@@ -109,8 +70,8 @@ public final class ShortcutBadger {
      * @param context Caller context
      * @return true in case of success, false otherwise
      */
-    public static boolean removeCount(Context context) {
-        return applyCount(context, 0);
+    public static boolean removeCount(Context context,Class launcherClass) {
+        return applyCount(launcherClass, context, 0);
     }
 
     /**
@@ -118,53 +79,10 @@ public final class ShortcutBadger {
      *
      * @param context Caller context
      */
-    public static void removeCountOrThrow(Context context) throws ShortcutBadgeException {
-        applyCountOrThrow(context, 0);
+    public static void removeCountOrThrow(Context context, Class launcherClass) throws ShortcutBadgeException {
+        applyCountOrThrow(launcherClass, context, 0);
     }
 
-    /**
-     * Whether this platform launcher supports shortcut badges. Doing this check causes the side
-     * effect of resetting the counter if it's supported, so this method should be followed by
-     * a call that actually sets the counter to the desired value, if the counter is supported.
-     */
-    public static boolean isBadgeCounterSupported(Context context) {
-        // Checking outside synchronized block to avoid synchronization in the common case (flag
-        // already set), and improve perf.
-        if (sIsBadgeCounterSupported == null) {
-            synchronized (sCounterSupportedLock) {
-                // Checking again inside synch block to avoid setting the flag twice.
-                if (sIsBadgeCounterSupported == null) {
-                    String lastErrorMessage = null;
-                    for (int i = 0; i < SUPPORTED_CHECK_ATTEMPTS; i++) {
-                        try {
-                            Log.i(LOG_TAG, "Checking if platform supports badge counters, attempt "
-                                    + String.format("%d/%d.", i + 1, SUPPORTED_CHECK_ATTEMPTS));
-                            if (initBadger(context)) {
-                                sShortcutBadger.executeBadge(context, sComponentName, 0);
-                                sIsBadgeCounterSupported = true;
-                                Log.i(LOG_TAG, "Badge counter is supported in this platform.");
-                                break;
-                            } else {
-                                lastErrorMessage = "Failed to initialize the badge counter.";
-                            }
-                        } catch (Exception e) {
-                            // Keep retrying as long as we can. No need to dump the stack trace here
-                            // because this error will be the norm, not exception, for unsupported
-                            // platforms. So we just save the last error message to display later.
-                            lastErrorMessage = e.getMessage();
-                        }
-                    }
-
-                    if (sIsBadgeCounterSupported == null) {
-                        Log.w(LOG_TAG, "Badge counter seems not supported for this platform: "
-                                + lastErrorMessage);
-                        sIsBadgeCounterSupported = false;
-                    }
-                }
-            }
-        }
-        return sIsBadgeCounterSupported;
-    }
 
     /**
      * @param context      Caller context
@@ -189,15 +107,6 @@ public final class ShortcutBadger {
     // Initialize Badger if a launcher is availalble (eg. set as default on the device)
     // Returns true if a launcher is available, in this case, the Badger will be set and sShortcutBadger will be non null.
     private static boolean initBadger(Context context) {
-        if (sComponentName == null) {
-            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-            if (launchIntent == null) {
-                Log.e(LOG_TAG, "Unable to find launch intent for package " + context.getPackageName());
-                return false;
-            }
-
-            sComponentName = launchIntent.getComponent();
-        }
 
         if (sShortcutBadger == null) {
             if (OAIDRom.isHuawei()) {
@@ -208,11 +117,11 @@ public final class ShortcutBadger {
                 sShortcutBadger = new OPPOHomeBader();
             } else if (OAIDRom.isXiaomi()) {
                 sShortcutBadger = new XiaomiHomeBadger();
-            } else if (OAIDRom.isZTE()) {
-                sShortcutBadger = new ZTEHomeBadger();
             } else if (OAIDRom.isSamsung()) {
                 sShortcutBadger = new SamsungHomeBadger();
-            } else {
+            } else if (OAIDRom.isLenovo()) {
+                sShortcutBadger = new ZukHomeBadger();
+            }else {
                 sShortcutBadger = new DefaultBadger();
             }
         }

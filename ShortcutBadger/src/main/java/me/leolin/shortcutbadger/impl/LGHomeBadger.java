@@ -24,11 +24,11 @@ public class LGHomeBadger implements Badger {
     private static final String INTENT_EXTRA_ACTIVITY_NAME = "badge_count_class_name";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         Intent intent = new Intent(INTENT_ACTION);
         intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
-        intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
-        intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
+        intent.putExtra(INTENT_EXTRA_PACKAGENAME, context.getPackageName());
+        intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, launcherClass.getName());
 
         BroadcastHelper.sendDefaultIntentExplicitly(context, intent);
     }

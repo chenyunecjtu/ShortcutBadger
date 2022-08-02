@@ -31,21 +31,21 @@ public class SamsungHomeBadger implements Badger {
     }
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         if (defaultBadger != null && defaultBadger.isSupported(context)) {
-            defaultBadger.executeBadge(context, componentName, badgeCount);
+            defaultBadger.executeBadge(context, launcherClass, badgeCount);
         } else {
             Uri mUri = Uri.parse(CONTENT_URI);
             ContentResolver contentResolver = context.getContentResolver();
             Cursor cursor = null;
             try {
-                cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[]{componentName.getPackageName()}, null);
+                cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[]{context.getPackageName()}, null);
                 if (cursor != null) {
-                    String entryActivityName = componentName.getClassName();
+                    String entryActivityName = launcherClass.getName();
                     boolean entryActivityExist = false;
                     while (cursor.moveToNext()) {
                         int id = cursor.getInt(0);
-                        ContentValues contentValues = getContentValues(componentName, badgeCount, false);
+                        ContentValues contentValues = getContentValues(context, launcherClass, badgeCount, false);
                         contentResolver.update(mUri, contentValues, "_id=?", new String[]{String.valueOf(id)});
                         if (entryActivityName.equals(cursor.getString(cursor.getColumnIndex("class")))) {
                             entryActivityExist = true;
@@ -53,7 +53,7 @@ public class SamsungHomeBadger implements Badger {
                     }
 
                     if (!entryActivityExist) {
-                        ContentValues contentValues = getContentValues(componentName, badgeCount, true);
+                        ContentValues contentValues = getContentValues(context, launcherClass, badgeCount, true);
                         contentResolver.insert(mUri, contentValues);
                     }
                 }
@@ -63,11 +63,11 @@ public class SamsungHomeBadger implements Badger {
         }
     }
 
-    private ContentValues getContentValues(ComponentName componentName, int badgeCount, boolean isInsert) {
+    private ContentValues getContentValues(Context context, Class launcherClass, int badgeCount, boolean isInsert) {
         ContentValues contentValues = new ContentValues();
         if (isInsert) {
-            contentValues.put("package", componentName.getPackageName());
-            contentValues.put("class", componentName.getClassName());
+            contentValues.put("package", context.getPackageName());
+            contentValues.put("class", launcherClass.getName());
         }
 
         contentValues.put("badgecount", badgeCount);

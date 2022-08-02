@@ -29,10 +29,10 @@ public class YandexLauncherBadger implements Badger {
     private static final String COLUMN_BADGES_COUNT = "badges_count";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         Bundle extras = new Bundle();
-        extras.putString(COLUMN_CLASS, componentName.getClassName());
-        extras.putString(COLUMN_PACKAGE, componentName.getPackageName());
+        extras.putString(COLUMN_CLASS, launcherClass.getName());
+        extras.putString(COLUMN_PACKAGE, context.getPackageName());
         extras.putString(COLUMN_BADGES_COUNT, String.valueOf(badgeCount));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             context.getContentResolver().call(CONTENT_URI, METHOD_TO_CALL, null, extras);

@@ -45,29 +45,29 @@ public class AsusHomeBadger implements Badger {
 
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             // FIXME: It seems that ZenUI (com.asus.launcher) declares a content provider for badges but without documentation it is hard to guess how to add badges with it. Current draft implementation gives "No yet implemented" exception.
 //            if (asusBadgeContentProviderExists(context)) {
 //                executeBadgeByContentProvider(context, componentName, badgeCount);
 //            } else {
-                executeBadgeByBroadcast(context, componentName, badgeCount);
+                executeBadgeByBroadcast(context, launcherClass, badgeCount);
 //            }
         } else {
             Intent intent = new Intent(INTENT_ACTION);
             intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
-            intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
-            intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
+            intent.putExtra(INTENT_EXTRA_PACKAGENAME, context.getPackageName());
+            intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, launcherClass.getName());
             intent.putExtra("badge_vip_count", 0);
 
             BroadcastHelper.sendDefaultIntentExplicitly(context, intent);
         }
     }
 
-    private void executeBadgeByBroadcast(Context context, ComponentName componentName, int badgeCount) {
+    private void executeBadgeByBroadcast(Context context, Class launcherClass, int badgeCount) {
         Intent intent = new Intent(SONY_INTENT_ACTION);
-        intent.putExtra(SONY_INTENT_EXTRA_PACKAGE_NAME, componentName.getPackageName());
-        intent.putExtra(SONY_INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
+        intent.putExtra(SONY_INTENT_EXTRA_PACKAGE_NAME, context.getPackageName());
+        intent.putExtra(SONY_INTENT_EXTRA_ACTIVITY_NAME, launcherClass.getName());
         intent.putExtra(SONY_INTENT_EXTRA_MESSAGE, String.valueOf(badgeCount));
         intent.putExtra(SONY_INTENT_EXTRA_SHOW_MESSAGE, badgeCount > 0);
         // FIXME: BroadcastHelper fail to resolve broadcast and then don't broadcast intent while it works.

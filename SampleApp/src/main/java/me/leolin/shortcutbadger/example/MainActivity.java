@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,19 +20,28 @@ import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 import me.leolin.shortcutbadger.ShortcutBadger;
+import me.leolin.shortcutbadger.util.OAIDRom;
 
 
 public class MainActivity extends Activity {
-
+    private int cid = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        ShortcutBadger.launcherClass = this.getClass();
         final EditText numInput = findViewById(R.id.numInput);
-
+        Log.i("mainactivity", "v:" + System.getProperty("ro.miui.ui.version.name"));
+        Log.d("mainactivity", "v:" + System.getProperty("ro.miui.ui.version.code"));
+        Log.d("mainactivity", "v:" + OAIDRom.sysProperty("ro.miui.ui.version.code", ""));
+        Log.d("mainactivity", "v:" + OAIDRom.sysProperty("ro.miui.ui.version.name", ""));
         Button button = findViewById(R.id.btnSetBadge);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -41,7 +53,7 @@ public class MainActivity extends Activity {
                     Toast.makeText(getApplicationContext(), "Error input", Toast.LENGTH_SHORT).show();
                 }
 
-                boolean success = ShortcutBadger.applyCount(MainActivity.this, badgeCount);
+                boolean success = ShortcutBadger.applyCount(MainActivity.this.getClass(), MainActivity.this, badgeCount);
                 test(badgeCount);
                 Toast.makeText(getApplicationContext(), "Set count=" + badgeCount + ", success=" + success, Toast.LENGTH_SHORT).show();
             }
@@ -60,7 +72,7 @@ public class MainActivity extends Activity {
 
                 finish();
                 startService(
-                    new Intent(MainActivity.this, BadgeIntentService.class).putExtra("badgeCount", badgeCount)
+                        new Intent(MainActivity.this, BadgeIntentService.class).putExtra("badgeCount", badgeCount)
                 );
             }
         });
@@ -69,7 +81,7 @@ public class MainActivity extends Activity {
         removeBadgeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                boolean success = ShortcutBadger.removeCount(MainActivity.this);
+                boolean success = ShortcutBadger.removeCount(MainActivity.this, MainActivity.this.getClass());
 
                 Toast.makeText(getApplicationContext(), "success=" + success, Toast.LENGTH_SHORT).show();
             }
@@ -101,18 +113,18 @@ public class MainActivity extends Activity {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            if (  notificationManager.getNotificationChannel(id) == null) {
+            if (notificationManager.getNotificationChannel(id) == null) {
                 mChannel = new NotificationChannel(id, name, importance);
                 mChannel.setDescription(description);
                 mChannel.setShowBadge(true);
                 notificationManager.createNotificationChannel(mChannel);
             }
-           Notification notification =  new NotificationCompat.Builder(this, id)
-                   .setContentText("df")
-                   .setNumber(num)
-                   .setSmallIcon(R.drawable.ic_launcher)
-                   .build();
-            notificationManager.notify(1, notification);
+            Notification notification = new NotificationCompat.Builder(this, id)
+                    .setContentText("df")
+                    .setNumber(num)
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .build();
+            notificationManager.notify(cid++, notification);
         }
 
 

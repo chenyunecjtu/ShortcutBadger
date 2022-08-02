@@ -37,12 +37,12 @@ public class SonyHomeBadger implements Badger {
     private AsyncQueryHandler mQueryHandler;
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName,
+    public void executeBadge(Context context, Class launcherClass,
                              int badgeCount) throws ShortcutBadgeException {
         if (sonyBadgeContentProviderExists(context)) {
-            executeBadgeByContentProvider(context, componentName, badgeCount);
+            executeBadgeByContentProvider(context, launcherClass, badgeCount);
         } else {
-            executeBadgeByBroadcast(context, componentName, badgeCount);
+            executeBadgeByBroadcast(context, launcherClass, badgeCount);
         }
     }
 
@@ -51,11 +51,11 @@ public class SonyHomeBadger implements Badger {
         return Arrays.asList("com.sonyericsson.home", "com.sonymobile.home");
     }
 
-    private static void executeBadgeByBroadcast(Context context, ComponentName componentName,
+    private static void executeBadgeByBroadcast(Context context, Class launcherClass,
                                                 int badgeCount) {
         Intent intent = new Intent(INTENT_ACTION);
-        intent.putExtra(INTENT_EXTRA_PACKAGE_NAME, componentName.getPackageName());
-        intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
+        intent.putExtra(INTENT_EXTRA_PACKAGE_NAME, context.getPackageName());
+        intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, launcherClass.getName());
         intent.putExtra(INTENT_EXTRA_MESSAGE, String.valueOf(badgeCount));
         intent.putExtra(INTENT_EXTRA_SHOW_MESSAGE, badgeCount > 0);
         context.sendBroadcast(intent);
@@ -65,16 +65,16 @@ public class SonyHomeBadger implements Badger {
      * Send request to Sony badge content provider to set badge in Sony home launcher.
      *
      * @param context       the context to use
-     * @param componentName the componentName to use
+     * @param launcherClass the componentName to use
      * @param badgeCount    the badge count
      */
-    private void executeBadgeByContentProvider(Context context, ComponentName componentName,
+    private void executeBadgeByContentProvider(Context context, Class launcherClass,
                                                int badgeCount) {
         if (badgeCount < 0) {
             return;
         }
 
-        final ContentValues contentValues = createContentValues(badgeCount, componentName);
+        final ContentValues contentValues = createContentValues(context, badgeCount, launcherClass);
         if (Looper.myLooper() == Looper.getMainLooper()) {
             // We're in the main thread. Let's ensure the badge update happens in a background
             // thread by using an AsyncQueryHandler and an async update.
@@ -124,15 +124,15 @@ public class SonyHomeBadger implements Badger {
      * exception on the background thread.
      *
      * @param badgeCount    the badge count
-     * @param componentName the component name from which package and class name will be extracted
+     * @param launcherClass the component name from which package and class name will be extracted
      *
      */
-    private ContentValues createContentValues(final int badgeCount,
-            final ComponentName componentName) {
+    private ContentValues createContentValues(Context context, final int badgeCount,
+            final Class launcherClass) {
         final ContentValues contentValues = new ContentValues();
         contentValues.put(PROVIDER_COLUMNS_BADGE_COUNT, badgeCount);
-        contentValues.put(PROVIDER_COLUMNS_PACKAGE_NAME, componentName.getPackageName());
-        contentValues.put(PROVIDER_COLUMNS_ACTIVITY_NAME, componentName.getClassName());
+        contentValues.put(PROVIDER_COLUMNS_PACKAGE_NAME, context.getPackageName());
+        contentValues.put(PROVIDER_COLUMNS_ACTIVITY_NAME, launcherClass.getName());
         return contentValues;
     }
 

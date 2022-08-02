@@ -24,10 +24,10 @@ public class EverythingMeHomeBadger implements Badger {
     private static final String COLUMN_COUNT = "count";
 
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException  {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException  {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(COLUMN_PACKAGE_NAME, componentName.getPackageName());
-        contentValues.put(COLUMN_ACTIVITY_NAME, componentName.getClassName());
+        contentValues.put(COLUMN_PACKAGE_NAME, context.getPackageName());
+        contentValues.put(COLUMN_ACTIVITY_NAME, launcherClass.getName());
         contentValues.put(COLUMN_COUNT, badgeCount);
         context.getContentResolver().insert(Uri.parse(CONTENT_URI), contentValues);
     }

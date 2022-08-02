@@ -24,7 +24,7 @@ public class ZukHomeBadger implements Badger {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    public void executeBadge(Context context, Class launcherClass, int badgeCount) throws ShortcutBadgeException {
         Bundle extra = new Bundle();
         extra.putInt("app_badge_count", badgeCount);
         context.getContentResolver().call(CONTENT_URI, "setAppBadgeCount", null, extra);
