@@ -12,6 +12,7 @@ import java.util.List;
 
 import me.leolin.shortcutbadger.Badger;
 import me.leolin.shortcutbadger.ShortcutBadgeException;
+import me.leolin.shortcutbadger.ShortcutBadger;
 
 /**
  * @author Jason Ling
@@ -19,7 +20,7 @@ import me.leolin.shortcutbadger.ShortcutBadgeException;
 
 /**
  * 1. 三方应用采用build.manufacture或者build.brand值来特殊处理角标或者指纹相关功能(build.brand由HUAWEI修改为HONOR, build.manufacture由HUAWEI修改为HONOR)。
- *
+ * <p>
  * 2. 三方应用判断launcher名字来做特殊处理，导致角标功能失效。(com.huawei.android.launcher 修改为com.hihonor.android.launcher)
  */
 public class HuaweiHomeBadger implements Badger {
@@ -30,11 +31,17 @@ public class HuaweiHomeBadger implements Badger {
         String URI_NEW = "content://com.hihonor.android.launcher.settings/badge/";
         Uri uri = Uri.parse(URI_NEW);
         String type = context.getContentResolver().getType(uri);
+        if (ShortcutBadger.log != null) {
+            ShortcutBadger.log.i("HuaweiHomeBadger", "badgeCount=" + badgeCount + " new type:" + type);
+        }
         Log.i("HomeBadger", "new type:" + type);
         if (TextUtils.isEmpty(type)) {
             uri = Uri.parse(URI_OLD);
             type = context.getContentResolver().getType(uri);
             Log.i("HomeBadger", "old type:" + type);
+            if (ShortcutBadger.log != null) {
+                ShortcutBadger.log.i("HuaweiHomeBadger", "badgeCount=" + badgeCount + " old type:" + type);
+            }
             if (TextUtils.isEmpty(type)) {
                 uri = null;
             }
@@ -48,8 +55,11 @@ public class HuaweiHomeBadger implements Badger {
                 context.getContentResolver().call(uri, "change_badge", null, localBundle);
             }
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
+            if (ShortcutBadger.log != null&& e!= null) {
+                ShortcutBadger.log.i("HuaweiHomeBadger", "" + e.getMessage());
+            }
         }
 
     }

@@ -15,6 +15,7 @@ import me.leolin.shortcutbadger.impl.SamsungHomeBadger;
 import me.leolin.shortcutbadger.impl.VivoHomeBadger;
 import me.leolin.shortcutbadger.impl.XiaomiHomeBadger;
 import me.leolin.shortcutbadger.impl.ZukHomeBadger;
+import me.leolin.shortcutbadger.util.ILog;
 import me.leolin.shortcutbadger.util.OAIDRom;
 
 
@@ -25,6 +26,8 @@ public final class ShortcutBadger {
     private static final String LOG_TAG = "ShortcutBadger";
     public   static Class launcherClass;
     private static Badger sShortcutBadger;
+    public static ILog log;
+
 
     /**
      * Tries to update the notification count
